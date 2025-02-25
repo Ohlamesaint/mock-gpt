@@ -57,7 +57,9 @@ class Message extends StatelessWidget {
                   child: TimeStampedMessage(
                     text: isOld
                         ? context.watch<ChatViewModelImpl>().oldMessages[index]
-                        : context.watch<ChatViewModelImpl>().messages[index],
+                        : context
+                            .watch<ChatViewModelImpl>()
+                            .messages[index - 1],
                     isUser: (index + (isOld ? 1 : 0)) % 2 == 0,
                     textStyle: const TextStyle(
                       color: Colors.white,

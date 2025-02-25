@@ -35,10 +35,9 @@ class ChatViewModelImpl with ChangeNotifier implements ChatViewModel {
   ChatViewModelImpl(this._responseService);
 
   @override
-  void onSendMessage(String message) {
-    messages = [...messages, message];
-    notifyListeners();
-    messages = [...messages, '...'];
+  Future<void> onSendMessage(String message) async {
+    messages = ['...', message, ...messages];
+
     notifyListeners();
 
     if (message.toLowerCase().contains("long")) {
@@ -46,6 +45,11 @@ class ChatViewModelImpl with ChangeNotifier implements ChatViewModel {
     } else {
       responseStream = _responseService.genResponse(1, 10);
     }
+    // await scrollToBottom();
+    await SchedulerBinding.instance.endOfFrame;
+    _controller.animateTo(0,
+        duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
+    await SchedulerBinding.instance.endOfFrame;
 
     responseStream!.listen(
       _onMessageGen,
@@ -53,13 +57,6 @@ class ChatViewModelImpl with ChangeNotifier implements ChatViewModel {
         _status = ResponseStatus.done;
       },
     );
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _controller.animateTo(
-        _controller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.ease,
-      );
-    });
   }
 
   @override
@@ -76,11 +73,23 @@ class ChatViewModelImpl with ChangeNotifier implements ChatViewModel {
     notifyListeners();
   }
 
+  Future<void> scrollToBottom() async {
+    await SchedulerBinding.instance.endOfFrame;
+    while (
+        _controller.position.pixels != _controller.position.maxScrollExtent) {
+      await _controller.animateTo(_controller.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 50), curve: Curves.linear);
+    }
+  }
+
   void _onMessageGen(String message) {
     final newMessage =
-        _status == ResponseStatus.done ? message : messages.last + message;
+        _status == ResponseStatus.done ? message : messages.first + message;
     _status = ResponseStatus.generating;
-    messages = [...messages.sublist(0, messages.length - 1), newMessage];
+    messages = [
+      newMessage,
+      ...messages.sublist(1, messages.length),
+    ];
     notifyListeners();
   }
 }
