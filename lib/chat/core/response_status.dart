@@ -1,0 +1,4 @@
+enum ResponseStatus {
+  generating,
+  done,
+}
